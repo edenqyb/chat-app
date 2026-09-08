@@ -123,6 +123,11 @@ button:hover {
   background: var(--blue-5);
 }
 
+button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 button:active {
   transform: translate(3px, 3px);
   box-shadow: 1px 1px 0 0 var(--shadow);

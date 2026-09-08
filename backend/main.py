@@ -2,14 +2,16 @@ import os
 import time
 from datetime import datetime
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", "postgresql://pixelchat:pixelchat@db:5432/pixelchat"
 )
+
 
 Base = declarative_base()
 
@@ -20,6 +22,13 @@ class Message(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, index=True)
     text = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -51,6 +60,10 @@ app.add_middleware(
 )
 
 
+class LoginRequest(BaseModel):
+    username: str
+
+
 def serialize(msg: Message):
     return {
         "id": msg.id,
@@ -59,6 +72,16 @@ def serialize(msg: Message):
         "created_at": msg.created_at.isoformat(),
     }
 
+def create_user(username: str):
+    session = SessionLocal()
+    try:
+        user = User(username=username)
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+    finally:
+        session.close()
 
 class ConnectionManager:
     def __init__(self):
@@ -91,8 +114,32 @@ def health():
     return {"status": "ok"}
 
 
+def valid_username(username: str):
+    session = SessionLocal()
+    try:
+        return session.query(User).filter_by(username=username).first()
+    finally:
+        session.close()
+
+
+@app.post("/api/login")
+def login(request: LoginRequest):
+    username = request.username.strip()
+    if not username or not valid_username(username):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="That username is not allowed.",
+        )
+    return {"username": username}
+
+
 @app.get("/api/messages")
-def get_messages():
+def get_messages(username: str):
+    if not valid_username(username.strip()):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="A valid username is required.",
+        )
     session = SessionLocal()
     try:
         rows = session.query(Message).order_by(Message.id.asc()).limit(200).all()
@@ -103,6 +150,10 @@ def get_messages():
 
 @app.websocket("/ws/{username}")
 async def ws_endpoint(websocket: WebSocket, username: str):
+    if not valid_username(username):
+        await websocket.close(code=1008, reason="Invalid username")
+        return
+
     await manager.connect(websocket)
     try:
         # let everyone know someone joined

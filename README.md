@@ -1,4 +1,4 @@
-# PixelChat 💙
+# PixelChat
 
 A tiny local chat app for two. Messages are stored
 in Postgres so history persists across restarts.

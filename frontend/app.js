@@ -59,7 +59,8 @@ function addSystemMessage(text) {
 
 async function loadHistory() {
   try {
-    const res = await fetch(`${API_URL}/messages`);
+    const res = await fetch(`${API_URL}/messages?username=${encodeURIComponent(username)}`);
+    if (!res.ok) throw new Error("history request failed");
     const data = await res.json();
     data.forEach(addMessage);
   } catch (e) {
@@ -99,14 +100,33 @@ async function join() {
     loginError.textContent = "type a name first!";
     return;
   }
-  username = name;
-  meLabel.textContent = "you: " + username;
 
-  loginScreen.classList.add("hidden");
-  chatScreen.classList.remove("hidden");
+  joinBtn.disabled = true;
+  loginError.textContent = "checking username...";
+  try {
+    const res = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: name }),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.detail || "That username is not allowed.");
+    }
 
-  await loadHistory();
-  connect();
+    username = name;
+    meLabel.textContent = "you: " + username;
+    loginError.textContent = "";
+    loginScreen.classList.add("hidden");
+    chatScreen.classList.remove("hidden");
+
+    await loadHistory();
+    connect();
+  } catch (error) {
+    loginError.textContent = error.message;
+  } finally {
+    joinBtn.disabled = false;
+  }
 }
 
 joinBtn.addEventListener("click", join);
