@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pixelchat_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pixelchat
+      POSTGRES_PASSWORD: pixelchat
+      POSTGRES_DB: pixelchat
+    volumes:
+      - pixelchat_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pixelchat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: pixelchat_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://pixelchat:pixelchat@db:5432/pixelchat
+    ports:
+      # 0.0.0.0 binding so both LAN and WiFi devices on the same
+      # network can reach whichever machine is running docker compose
+      - "0.0.0.0:8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: pixelchat_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "0.0.0.0:8080:80"
+
+volumes:
+  pixelchat_data:

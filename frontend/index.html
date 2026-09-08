@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PixelChat 💙</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Login screen -->
+  <div id="login-screen" class="screen">
+    <div class="panel login-panel">
+      <div class="pixel-heart"></div>
+      <h1>PixelChat</h1>
+      <p class="subtitle">a tiny blue mailbox for two</p>
+      <input id="username-input" type="text" maxlength="16" placeholder="your name" />
+      <button id="join-btn">JOIN CHAT</button>
+      <p id="login-error" class="error-text"></p>
+    </div>
+  </div>
+
+  <!-- Chat screen -->
+  <div id="chat-screen" class="screen hidden">
+    <div class="panel chat-panel">
+      <div class="chat-header">
+        <div class="header-left">
+          <span class="pixel-dot"></span>
+          <span id="status-text">connecting...</span>
+        </div>
+        <div class="header-right" id="me-label"></div>
+      </div>
+
+      <div id="messages" class="messages"></div>
+
+      <form id="message-form" class="message-form">
+        <input id="message-input" type="text" autocomplete="off" placeholder="type a message..." />
+        <button type="submit">SEND</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
