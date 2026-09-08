@@ -11,8 +11,6 @@ DATABASE_URL = os.environ.get(
     "DATABASE_URL", "postgresql://pixelchat:pixelchat@db:5432/pixelchat"
 )
 
-# --- DB setup -----------------------------------------------------------
-
 Base = declarative_base()
 
 
@@ -42,8 +40,6 @@ def wait_for_engine(url, retries=20, delay=1.5):
 engine = wait_for_engine(DATABASE_URL)
 Base.metadata.create_all(bind=engine)
 SessionLocal = sessionmaker(bind=engine)
-
-# --- App ------------------------------------------------------------------
 
 app = FastAPI(title="PixelChat")
 
